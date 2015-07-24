@@ -14,3 +14,4 @@ Route::get('/',function(){
 	return "Reached";
 });
 Route::get('admin',array('as'=>'admin','uses'=>'AdminController@show'));
+Route::get('product',array('as'=>'product','uses'=>'ProductController'));
