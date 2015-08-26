@@ -9,7 +9,8 @@ class ProductController extends \BaseController {
 	 */
 	public function index()
 	{
-		//
+		$products=Products::all();
+		return View::make('commercial.products',compact('products'));
 	}
 
 
