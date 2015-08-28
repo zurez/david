@@ -13,5 +13,5 @@ Route::get('buy/{id}/paypal',array('as' =>'buy' ,'uses'=>'PaypalController@index
 
 Route::get('order/status', array(
     'as' => 'payment.status',
-    'uses' => 'IndexController@getPaymentStatus',
+    'uses' => 'PaypalController@getPaymentStatus',
 ));
