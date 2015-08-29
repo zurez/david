@@ -155,7 +155,7 @@ public function getPaymentStatus()
     if ($result->getState() == 'approved') { // payment made
         //logic
         $newcustomer = new Customer;
-
+        $length=60;
         $string= str_random(4);
         $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-=+;:,.?";
     	$rest = substr( str_shuffle( $chars ), 0,8);
@@ -166,6 +166,7 @@ public function getPaymentStatus()
     	$id= Session::get('id');
     	Session::forget('id');
     	$script =Findfile::where('lookupid',$id)->get()->filename;
+    	$token = bin2hex(random_bytes($length));
 
         
     }
