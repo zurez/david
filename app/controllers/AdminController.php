@@ -7,6 +7,11 @@ class AdminController extends \BaseController {
 	 *
 	 * @return Response
 	 */
+	  public function __construct()
+			  {
+			    # code...
+			    $this->beforeFilter('admin');
+			  }
 	public function index()
 	{
 		$products= Products::all();

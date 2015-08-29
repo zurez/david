@@ -52,19 +52,23 @@ class PaypalController extends \BaseController {
     				$newcustomer = new Customer;
 			        $length=60;
 			        $string= str_random(4);
-			        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-=+;:,.?";
+			        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 			    	$rest = substr( str_shuffle( $chars ), 0,8);
 			    	$username= str_random(7);
 			    	$password= $string."als".$rest;
-			    	$email=Session::get('email');
-			    	Session::forget('email');
-			    	$id= Session::get('id');
-			    	Session::forget('id');
-			    	$script =Findfile::where('lookupid',$id)->get()->filename;
-			    	$token = bin2hex(random_bytes($length));
+			    	// $email=Session::get('email');
+			    	// Session::forget('email');
+			    	$email= Input::get('email');
+			    	// $id= Session::get('id');
+			    	// Session::forget('id');
+			    	//$script =Findfile::where('lookupid',$id)->get();
+			    	$script="script.zip";
+			    	$token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
 			    	$newcustomer->username= $username;
 			    	$newcustomer->password=$password;
 			    	$newcustomer->token= $token;
+			    	$newcustomer->email=$email;
+
 			    	$newcustomer->script=$script;
 			    	$newcustomer->save();
 			    	//Create 2 tables
@@ -74,18 +78,24 @@ class PaypalController extends \BaseController {
 								    $table->string('username',20);
 								    $table->string('token',100);
 								    $table->string('script',100);
-								    $table->string('counter',1);
+								    $table->string('counter',1)->default('0');
 								});
 			    	Schema::create($username."_transaction", function($table)
 							{
 							    $table->increments('id');
 							    $table->string('script',100);
-							    $table->int('amount',3);
+							    $table->string('amount',3);
 							    $table->string('purchase_date',10);
 
 							});
-
+			    	//Add to users table
+			    	$user= new User;
+			    	$user->username=$username;
+			    	$user->password=$password;
+			    	$user->save();
+			    	return Response::download(storage_path().'/files/'.$script);
     			}
+
     }
     
     public function postPayment($id,$email)

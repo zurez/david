@@ -1,85 +1,48 @@
 <?php
 
 class DownloadController extends \BaseController {
-
-	/**
-	 * Display a listing of the resource.
-	 *
-	 * @return Response
-	 */
-	public function index()
+	public function showLogin()
 	{
-		//
+		return View::make('login');
 	}
-
-
-	/**
-	 * Show the form for creating a new resource.
-	 *
-	 * @return Response
-	 */
-	public function create()
+	public function doLogin($token="")
 	{
-		//
+
+	$rules = array('username'    => 'required','password' => 'required|alphaNum|min:3');
+	$validator = Validator::make(Input::all(), $rules);
+	if ($validator->fails()) {return Redirect::to('login')->withErrors($validator) ->withInput(Input::except('password'));} 
+	else {$userdata = array('username'=> Input::get('username'),'password'  => Input::get('password'));}
+	if (Auth::attempt($userdata)) {
+				$username = Auth::user()->username;
+				$admins  = DB::table('admin')->lists('username');
+			if (in_array($username, $admins)){return  Redirect::action('AdminController@index');}
+			else {
+						return $this->download($token,$username);
+					}
+					} 
+				else {
+
+					echo "string";exit();
+					return Redirect::to('login');}
+				}
+
+	public function doLogout()
+	{
+	    Auth::logout(); // log the user out of our application
+	    return Redirect::to('login'); // redirect the user to the login screen
 	}
-
-
-	/**
-	 * Store a newly created resource in storage.
-	 *
-	 * @return Response
-	 */
-	public function store()
+	public function filter()
 	{
-		//
+		
 	}
-
-
-	/**
-	 * Display the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function show($id)
+	public function download($token,$username)
 	{
-		//
-	}
+		//Logic
+		//Check if logged in.. if yes down, if no return App::abort('401','unauthorised access')
 
-
-	/**
-	 * Show the form for editing the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function edit($id)
-	{
-		//
-	}
-
-
-	/**
-	 * Update the specified resource in storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function update($id)
-	{
-		//
-	}
-
-
-	/**
-	 * Remove the specified resource from storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function destroy($id)
-	{
-		//
+		//then check if token exists .. if yes if no delete the username
+		//then check counter , if its <=3 , if yes
+		//Response::Download , counter++
 	}
 
 

@@ -4,6 +4,13 @@
 Route::get('/',function(){
 	return "Reached";
 });
+//Login
+// route to show the login form
+Route::get('login', array('uses' => 'DownloadController@showLogin'));
+Route::get('logout', array('uses' => 'DownloadController@doLogout'));
+// route to process the form
+Route::post('login', array('uses' => 'DownloadController@doLogin'));
+//
 Route::group(array('before' => 'auth'), function(){
 Route::get('admin',array('as'=>'admin','uses'=>'AdminController@index'));
 
