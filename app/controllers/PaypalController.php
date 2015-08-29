@@ -45,9 +45,47 @@ class PaypalController extends \BaseController {
             ->withErrors($validator);
 
     			}
-    	else{
-    	return $this->postPayment($id,Input::get('email'));
-    	}
+    	// else{
+    	// return $this->postPayment($id,Input::get('email'));
+    	// }
+    			else{
+    				$newcustomer = new Customer;
+			        $length=60;
+			        $string= str_random(4);
+			        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-=+;:,.?";
+			    	$rest = substr( str_shuffle( $chars ), 0,8);
+			    	$username= str_random(7);
+			    	$password= $string."als".$rest;
+			    	$email=Session::get('email');
+			    	Session::forget('email');
+			    	$id= Session::get('id');
+			    	Session::forget('id');
+			    	$script =Findfile::where('lookupid',$id)->get()->filename;
+			    	$token = bin2hex(random_bytes($length));
+			    	$newcustomer->username= $username;
+			    	$newcustomer->password=$password;
+			    	$newcustomer->token= $token;
+			    	$newcustomer->script=$script;
+			    	$newcustomer->save();
+			    	//Create 2 tables
+			    	Schema::create($username, function($table)
+								{
+								    $table->increments('id');
+								    $table->string('username',20);
+								    $table->string('token',100);
+								    $table->string('script',100);
+								    $table->string('counter',1);
+								});
+			    	Schema::create($username."_transaction", function($table)
+							{
+							    $table->increments('id');
+							    $table->string('script',100);
+							    $table->int('amount',3);
+							    $table->string('purchase_date',10);
+
+							});
+
+    			}
     }
     
     public function postPayment($id,$email)
@@ -167,6 +205,12 @@ public function getPaymentStatus()
     	Session::forget('id');
     	$script =Findfile::where('lookupid',$id)->get()->filename;
     	$token = bin2hex(random_bytes($length));
+    	$newcustomer->username= $username;
+    	$newcustomer->password=$password;
+    	$newcustomer->token= $token;
+    	$newcustomer->script=$script;
+    	$newcustomer->save();
+
 
         
     }
