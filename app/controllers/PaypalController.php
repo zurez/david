@@ -27,14 +27,34 @@ class PaypalController extends \BaseController {
     public function index($id)
     {
     	
-	return $this->postPayment($id);
+	return View::make('commercial.getemail',compact('id'));
 
     }
+    public function redirect($id)
+    {
+    	
+    	$rules = array('email' => 'required|email');
+    	$validator = Validator::make(Input::all(), $rules);
+    	if ($validator->fails()) {
+
+        // get the error messages from the validator
+        $messages = $validator->messages();
+
+        // redirect our user back to the form with the errors from the validator
+        return Redirect::back()
+            ->withErrors($validator);
+
+    			}
+    	else{
+    	return $this->postPayment($id,Input::get('email'));
+    	}
+    }
     
-    public function postPayment($id)
+    public function postPayment($id,$email)
 {
 
-    
+    Session::put('id',$id);
+    Session::put('email',$email);
     $payer = new Payer();
     $payer->setPaymentMethod('paypal');
     $description = "David";
@@ -134,7 +154,20 @@ public function getPaymentStatus()
 
     if ($result->getState() == 'approved') { // payment made
         //logic
-        echo "succ";
+        $newcustomer = new Customer;
+
+        $string= str_random(4);
+        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-=+;:,.?";
+    	$rest = substr( str_shuffle( $chars ), 0,8);
+    	$username= str_random(7);
+    	$password= $string."als".$rest;
+    	$email=Session::get('email');
+    	Session::forget('email');
+    	$id= Session::get('id');
+    	Session::forget('id');
+    	$script =Findfile::where('lookupid',$id)->get()->filename;
+
+        
     }
     return Redirect::route('original.route')
         ->with('error', 'Payment failed');
