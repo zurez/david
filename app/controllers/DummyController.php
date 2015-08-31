@@ -1,21 +1,15 @@
 <?php
 
-class AdminController extends \BaseController {
+class DummyController extends \BaseController {
 
 	/**
 	 * Display a listing of the resource.
 	 *
 	 * @return Response
 	 */
-	  public function __construct()
-			  {
-			    # code...
-			    $this->beforeFilter('admin');
-			  }
 	public function index()
 	{
-		$products= Products::all();
-		return View::make('admin.index',compact('products'));
+		//
 	}
 
 
@@ -26,7 +20,7 @@ class AdminController extends \BaseController {
 	 */
 	public function create()
 	{
-		return View::make('admin.create');
+		//
 	}
 
 
@@ -36,22 +30,8 @@ class AdminController extends \BaseController {
 	 * @return Response
 	 */
 	public function store()
-	{	//Part One
-		$file= Input::file('script');
-		$filename= Input::file('script')->getClientOriginalName();
-
-		$destinationPath=storage_path().'/files';
-		$file->move($destinationPath, $filename);
-		//Part Two
-		$product= new Products;
-		$product->title= Input::get('title');
-		$product->description=Input::get('desc');
-		$product->price=Input::get('price');
-		$product->somethingelse=Input::get('something');
-		$product->filename=$filename;
-		$product->save();
-		//Part Three
-		return Redirect::to('admin');
+	{
+		//
 	}
 
 
@@ -99,8 +79,7 @@ class AdminController extends \BaseController {
 	 */
 	public function destroy($id)
 	{
-		DB::table('products')->where('id',$id)->delete();
-		return Redirect::back();
+		//
 	}
 
 

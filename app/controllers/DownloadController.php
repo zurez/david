@@ -45,13 +45,17 @@ class DownloadController extends \BaseController {
 		//Response::Download , counter++
 		//Counter is in the username table.
 		$script="script.zip";
-		$counter=DB::table($username)->where('token',$token)->pluck('counter');
-		$time= strtotime(DB::table($username)->where('token',$token)->pluck('created_at'));
+		if (Schema::hasTable($username))
+		{
+		    //
+		
+				$counter=DB::table($username)->where('token',$token)->pluck('counter');
+		$time= strtotime(DB::table('customers')->where('token',$token)->pluck('created_at'));
 		$currenttime= time();
 		$dtime= $currenttime-$time;
-		$timemargin=60;//One Day
+		$timemargin=160;//One Day
 		if (intval($counter)>10 or $dtime>$timemargin) {
-			DB::transaction(function(){
+			DB::transaction(function() use ($username){
 				Schema::dropIfExists($username);
 				DB::table('customers')->where('username',$username)->delete();
 				DB::table('users')->where('username',$username)->delete();
@@ -59,7 +63,7 @@ class DownloadController extends \BaseController {
 
 
 			});
-			return App::abort('403','unauthorised access');
+			return  "You are not authorised to";;
 		}
 		else{
 			//Update Counter
@@ -70,6 +74,10 @@ class DownloadController extends \BaseController {
             return Response::download(storage_path().'/files/'.$script);
 		}
 	}
+	else {
+		return "Anauthorised";
+	}
+}
 
 
 }

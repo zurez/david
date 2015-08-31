@@ -64,7 +64,7 @@ class PaypalController extends \BaseController {
 			    	// $id= Session::get('id');
 			    	// Session::forget('id');
 			    	//$script =Findfile::where('lookupid',$id)->get();
-			    	$script="script.zip";
+			    	$script=DB::table('products')->where('id',$id)->pluck('filename');
 			    	$token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
 
     				$newcustomer = new Customer;
@@ -84,6 +84,7 @@ class PaypalController extends \BaseController {
 								    $table->string('token',100);
 								    $table->string('script',100);
 								    $table->string('counter',1);
+								    $table->timestamps();
 								});
 			    	Schema::create($username."_transaction", function($table)
 							{
@@ -221,23 +222,70 @@ public function getPaymentStatus()
     if ($result->getState() == 'approved') { // payment made
         //logic
         $newcustomer = new Customer;
-        $length=60;
-        $string= str_random(4);
-        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-=+;:,.?";
-    	$rest = substr( str_shuffle( $chars ), 0,8);
-    	$username= str_random(7);
-    	$password= $string."als".$rest;
-    	$email=Session::get('email');
-    	Session::forget('email');
-    	$id= Session::get('id');
-    	Session::forget('id');
-    	$script =Findfile::where('lookupid',$id)->get()->filename;
-    	$token = bin2hex(random_bytes($length));
-    	$newcustomer->username= $username;
-    	$newcustomer->password=$password;
-    	$newcustomer->token= $token;
-    	$newcustomer->script=$script;
-    	$newcustomer->save();
+        
+                    DB::transaction(function(){
+                        $length=60;
+                    $string= str_random(4);
+                    $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                    $rest = substr( str_shuffle( $chars ), 0,8);
+                    $username= str_random(7);
+                    $password= $string."als".$rest;
+                    // $email=Session::get('email');
+                    // Session::forget('email');
+                    $email=Input::get('email');
+                    // $id= Session::get('id');
+                    // Session::forget('id');
+                    //$script =Findfile::where('lookupid',$id)->get();
+                    $script=DB::table('products')->where('id',$id)->pluck('filename');
+                    $token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
+
+                    $newcustomer = new Customer;
+                    
+                    $newcustomer->username= $username;
+                    $newcustomer->password=$password;
+                    $newcustomer->token= $token;
+                    $newcustomer->email=$email;
+
+                    $newcustomer->script=$script;
+                    $newcustomer->save();
+                    //Create 2 tables
+                    Schema::create($username, function($table)
+                                {
+                                    $table->increments('id');
+                                    $table->string('username',20);
+                                    $table->string('token',100);
+                                    $table->string('script',100);
+                                    $table->string('counter',1);
+                                    $table->timestamps();
+                                });
+                    Schema::create($username."_transaction", function($table)
+                            {
+                                $table->increments('id');
+                                $table->string('script',100);
+                                $table->string('amount',3);
+                                $table->string('purchase_date',10);
+
+                            });
+                    DB::table($username)->insert(
+                        array('id' =>1, 'username' => $username,'token'=>$token,'script'=>$script,'counter'=>'0')
+                                        );
+                    //Add to users table
+                    $user= new User;
+                    $user->username=$username;
+                    $user->password=$password;
+                    $user->save();
+                    
+                });//Transaction Ends
+                    //Send Download Link
+                     
+
+                    Mail::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
+                     $message->to($email,"Hey")->subject('Welcome!');
+
+                                                                    });
+
+                    return Response::download(storage_path().'/files/'.$script);
+                }
 
 
         
