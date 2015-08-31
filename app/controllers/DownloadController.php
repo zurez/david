@@ -43,6 +43,32 @@ class DownloadController extends \BaseController {
 		//then check if token exists .. if yes if no delete the username
 		//then check counter , if its <=3 , if yes
 		//Response::Download , counter++
+		//Counter is in the username table.
+		$script="script.zip";
+		$counter=DB::table($username)->where('token',$token)->pluck('counter');
+		$time= strtotime(DB::table($username)->where('token',$token)->pluck('created_at'));
+		$currenttime= time();
+		$dtime= $currenttime-$time;
+		$timemargin=60;//One Day
+		if (intval($counter)>10 or $dtime>$timemargin) {
+			DB::transaction(function(){
+				Schema::dropIfExists($username);
+				DB::table('customers')->where('username',$username)->delete();
+				DB::table('users')->where('username',$username)->delete();
+
+
+
+			});
+			return App::abort('403','unauthorised access');
+		}
+		else{
+			//Update Counter
+			$newcounter = intval($counter)+1;
+			DB::table($username)
+            ->where('token',$token)
+            ->update(array('counter' => $newcounter));
+            return Response::download(storage_path().'/files/'.$script);
+		}
 	}
 
 

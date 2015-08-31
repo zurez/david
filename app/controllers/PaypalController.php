@@ -49,8 +49,10 @@ class PaypalController extends \BaseController {
     	// return $this->postPayment($id,Input::get('email'));
     	// }
     			else{
-    				$newcustomer = new Customer;
-			        $length=60;
+    				
+
+    				DB::transaction(function(){
+    					$length=60;
 			        $string= str_random(4);
 			        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 			    	$rest = substr( str_shuffle( $chars ), 0,8);
@@ -58,12 +60,15 @@ class PaypalController extends \BaseController {
 			    	$password= $string."als".$rest;
 			    	// $email=Session::get('email');
 			    	// Session::forget('email');
-			    	$email= Input::get('email');
+			    	$email=Input::get('email');
 			    	// $id= Session::get('id');
 			    	// Session::forget('id');
 			    	//$script =Findfile::where('lookupid',$id)->get();
 			    	$script="script.zip";
 			    	$token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
+
+    				$newcustomer = new Customer;
+			        
 			    	$newcustomer->username= $username;
 			    	$newcustomer->password=$password;
 			    	$newcustomer->token= $token;
@@ -78,7 +83,7 @@ class PaypalController extends \BaseController {
 								    $table->string('username',20);
 								    $table->string('token',100);
 								    $table->string('script',100);
-								    $table->string('counter',1)->default('0');
+								    $table->string('counter',1);
 								});
 			    	Schema::create($username."_transaction", function($table)
 							{
@@ -88,11 +93,24 @@ class PaypalController extends \BaseController {
 							    $table->string('purchase_date',10);
 
 							});
+			    	DB::table($username)->insert(
+    					array('id' =>1, 'username' => $username,'token'=>$token,'script'=>$script,'counter'=>'0')
+										);
 			    	//Add to users table
 			    	$user= new User;
 			    	$user->username=$username;
 			    	$user->password=$password;
 			    	$user->save();
+			    	
+			    });//Transaction Ends
+					//Send Download Link
+			    	 
+
+			    	Mail::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
+        			 $message->to($email,"Hey")->subject('Welcome!');
+
+    																});
+
 			    	return Response::download(storage_path().'/files/'.$script);
     			}
 
