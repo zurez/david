@@ -11,7 +11,7 @@ use PayPal\Api\RedirectUrls;
 use PayPal\Api\ExecutePayment;
 use PayPal\Api\PaymentExecution;
 use PayPal\Api\Transaction;
-
+// ygy_1283buyer@hotmail.com
 class PaypalController extends \BaseController {
  	private $_api_context;
 
@@ -45,87 +45,24 @@ class PaypalController extends \BaseController {
             ->withErrors($validator);
 
     			}
-    	// else{
-    	// return $this->postPayment($id,Input::get('email'));
-    	// }
-    			else{
-    				
+    	else{
 
-    				DB::transaction(function(){
-    					$length=60;
-			        $string= str_random(4);
-			        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-			    	$rest = substr( str_shuffle( $chars ), 0,8);
-			    	$username= str_random(7);
-			    	$password= $string."als".$rest;
-			    	// $email=Session::get('email');
-			    	// Session::forget('email');
-			    	$email=Input::get('email');
-			    	// $id= Session::get('id');
-			    	// Session::forget('id');
-			    	//$script =Findfile::where('lookupid',$id)->get();
-			    	$script=DB::table('products')->where('id',$id)->pluck('filename');
-			    	$token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
-
-    				$newcustomer = new Customer;
-			        
-			    	$newcustomer->username= $username;
-			    	$newcustomer->password=$password;
-			    	$newcustomer->token= $token;
-			    	$newcustomer->email=$email;
-
-			    	$newcustomer->script=$script;
-			    	$newcustomer->save();
-			    	//Create 2 tables
-			    	Schema::create($username, function($table)
-								{
-								    $table->increments('id');
-								    $table->string('username',20);
-								    $table->string('token',100);
-								    $table->string('script',100);
-								    $table->string('counter',1);
-								    $table->timestamps();
-								});
-			    	Schema::create($username."_transaction", function($table)
-							{
-							    $table->increments('id');
-							    $table->string('script',100);
-							    $table->string('amount',3);
-							    $table->string('purchase_date',10);
-
-							});
-			    	DB::table($username)->insert(
-    					array('id' =>1, 'username' => $username,'token'=>$token,'script'=>$script,'counter'=>'0')
-										);
-			    	//Add to users table
-			    	$user= new User;
-			    	$user->username=$username;
-			    	$user->password=$password;
-			    	$user->save();
-			    	
-			    });//Transaction Ends
-					//Send Download Link
-			    	 
-
-			    	Mail::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
-        			 $message->to($email,"Hey")->subject('Welcome!');
-
-    																});
-
-			    	return Response::download(storage_path().'/files/'.$script);
-    			}
+    Session::put('id',$id);
+    Session::put('email',Input::get('email'));
+    	return $this->postPayment($id,Input::get('email'));
+    	}
+    			
 
     }
     
     public function postPayment($id,$email)
 {
 
-    Session::put('id',$id);
-    Session::put('email',$email);
     $payer = new Payer();
     $payer->setPaymentMethod('paypal');
     $description = "David";
     $price =Products::find($id)->price;
+    Session::put('price',$price);
     $item_1 = new Item();
     $item_1->setName('Script') // item name
         ->setCurrency('CAD')
@@ -184,7 +121,7 @@ class PaypalController extends \BaseController {
         return Redirect::away($redirect_url);
     }
 
-    return Redirect::route('original.route')
+    return Redirect::route('payment.unknown')
         ->with('error', 'Unknown error occurred');
     }//EndsHere
    
@@ -198,7 +135,7 @@ public function getPaymentStatus()
     Session::forget('paypal_payment_id');
 
     if (empty(Input::get('PayerID')) || empty(Input::get('token'))) {
-        return Redirect::route('console')
+        return Redirect::route('payment.failed')
             ->with('error', 'Payment failed');
     }
 
@@ -221,20 +158,19 @@ public function getPaymentStatus()
 
     if ($result->getState() == 'approved') { // payment made
         //logic
-        $newcustomer = new Customer;
-        
-                    DB::transaction(function(){
+       
+      DB::transaction(function(){
                         $length=60;
                     $string= str_random(4);
                     $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
                     $rest = substr( str_shuffle( $chars ), 0,8);
                     $username= str_random(7);
                     $password= $string."als".$rest;
-                    // $email=Session::get('email');
-                    // Session::forget('email');
-                    $email=Input::get('email');
-                    // $id= Session::get('id');
-                    // Session::forget('id');
+                    $email=Session::get('email');
+                    Session::forget('email');
+                    
+                    $id= Session::get('id');
+                   
                     //$script =Findfile::where('lookupid',$id)->get();
                     $script=DB::table('products')->where('id',$id)->pluck('filename');
                     $token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
@@ -258,39 +194,39 @@ public function getPaymentStatus()
                                     $table->string('counter',1);
                                     $table->timestamps();
                                 });
-                    Schema::create($username."_transaction", function($table)
-                            {
-                                $table->increments('id');
-                                $table->string('script',100);
-                                $table->string('amount',3);
-                                $table->string('purchase_date',10);
+                    // Schema::create($username."_transaction", function($table)
+                    //         {
+                    //             $table->increments('id');
+                    //             $table->string('script',100);
+                    //             $table->string('amount',3);
+                    //             $table->string('purchase_date',10);
+                    //             $table->pa
 
-                            });
+                    //         });
                     DB::table($username)->insert(
                         array('id' =>1, 'username' => $username,'token'=>$token,'script'=>$script,'counter'=>'0')
                                         );
                     //Add to users table
                     $user= new User;
                     $user->username=$username;
-                    $user->password=$password;
+                    $user->password=Hash::make($password);
                     $user->save();
-                    
+                    DB::table("transactions")->insert(array('username'=>$username,'amount'=>Session::get('price'),'filename'=>$script,'time'=>time()));
+                    Session::forget('price');
+                    Mailgun::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
+                     $message->to($email,"Hey")->subject('Welcome!');});//mail
+
                 });//Transaction Ends
                     //Send Download Link
-                     
+                    
 
-                    Mail::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
-                     $message->to($email,"Hey")->subject('Welcome!');
-
-                                                                    });
-
+                    $script=DB::table('products')->where('id',Session::get('id'))->pluck('filename'); Session::forget('id');
                     return Response::download(storage_path().'/files/'.$script);
-                }
 
 
         
     }
-    return Redirect::route('original.route')
+    return Redirect::route('payment.failed')
         ->with('error', 'Payment failed');
 }
 

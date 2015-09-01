@@ -1,0 +1,1 @@
+<h1 style="color:red;">Your Payment Failed. Please try again!</h1>

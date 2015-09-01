@@ -80,7 +80,7 @@ return array(
 
 	'key' => 'lOBngbRd28H7gJbWMISyiZCsv8ntya87',
 
-	'cipher' => MCRYPT_RIJNDAEL_128,
+	'cipher' => MCRYPT_RIJNDAEL_256,
 
 	/*
 	|--------------------------------------------------------------------------
@@ -121,6 +121,7 @@ return array(
 		'Illuminate\Validation\ValidationServiceProvider',
 		'Illuminate\View\ViewServiceProvider',
 		'Illuminate\Workbench\WorkbenchServiceProvider',
+		'Bogardo\Mailgun\MailgunServiceProvider',
 
 	),
 

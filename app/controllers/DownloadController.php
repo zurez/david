@@ -10,21 +10,33 @@ class DownloadController extends \BaseController {
 
 	$rules = array('username'    => 'required','password' => 'required|alphaNum|min:3');
 	$validator = Validator::make(Input::all(), $rules);
-	if ($validator->fails()) {return Redirect::to('login')->withErrors($validator) ->withInput(Input::except('password'));} 
-	else {$userdata = array('username'=> Input::get('username'),'password'  => Input::get('password'));}
-	if (Auth::attempt($userdata)) {
-				$username = Auth::user()->username;
-				$admins  = DB::table('admin')->lists('username');
-			if (in_array($username, $admins)){return  Redirect::action('AdminController@index');}
-			else {
-						return $this->download($token,$username);
-					}
-					} 
-				else {
 
-					echo "string";exit();
-					return Redirect::to('login');}
-				}
+	if ($validator->fails())
+	 {
+	 	return Redirect::to('login')->withErrors($validator) ->withInput(Input::except('password'));
+	 } 
+	else {
+			$userdata = array('username'=> Input::get('username'),'password'  => Input::get('password'));
+		
+		}
+	if (Auth::attempt($userdata)) {
+		//if login success
+		
+		$username=Auth::user()->username;
+		$admins=DB::table('admin')->lists('admin');
+		if (in_array($username,$admins)) {
+			return Redirect::action('AdminController@index');
+		}
+		else{
+			return $this->download($token,$username);
+		}
+	}
+	else {
+		$errormessage=array('message'=>"Login Failed");
+		return Redirect::to('login')->with($errormessage);
+	}
+
+	}//func ends
 
 	public function doLogout()
 	{
@@ -53,7 +65,7 @@ class DownloadController extends \BaseController {
 		$time= strtotime(DB::table('customers')->where('token',$token)->pluck('created_at'));
 		$currenttime= time();
 		$dtime= $currenttime-$time;
-		$timemargin=160;//One Day
+		$timemargin=3000;//One Day
 		if (intval($counter)>10 or $dtime>$timemargin) {
 			DB::transaction(function() use ($username){
 				Schema::dropIfExists($username);
