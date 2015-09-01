@@ -11,7 +11,7 @@ use PayPal\Api\RedirectUrls;
 use PayPal\Api\ExecutePayment;
 use PayPal\Api\PaymentExecution;
 use PayPal\Api\Transaction;
-// ygy_1283buyer@hotmail.com
+// pygy_1283buyer@hotmail.com
 class PaypalController extends \BaseController {
  	private $_api_context;
 
@@ -33,6 +33,7 @@ class PaypalController extends \BaseController {
     public function redirect($id)
     {
     	
+        Session::put('id',$id);
     	$rules = array('email' => 'required|email');
     	$validator = Validator::make(Input::all(), $rules);
     	if ($validator->fails()) {
@@ -45,13 +46,83 @@ class PaypalController extends \BaseController {
             ->withErrors($validator);
 
     			}
-    	else{
+    // 	else{
 
-    Session::put('id',$id);
-    Session::put('email',Input::get('email'));
-    	return $this->postPayment($id,Input::get('email'));
-    	}
-    			
+    // Session::put('id',$id);
+    // Session::put('email',Input::get('email'));
+    // 	return $this->postPayment($id,Input::get('email'));
+    // 	}
+    		else{
+                DB::transaction(function(){
+                        $length=60;
+                    $string= str_random(4);
+                    $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                    $rest = substr( str_shuffle( $chars ), 0,8);
+                    $username= str_random(7);
+                    $password= $string."als".$rest;
+                    $email=Session::get('email');
+                    $email=Input::get('email');
+                    Session::forget('email');
+                    
+                     $id= Session::get('id');
+                   
+                    //$script =Findfile::where('lookupid',$id)->get();
+                    $script=DB::table('products')->where('id',$id)->pluck('filename');
+                    $token = bin2hex(md5($_SERVER['HTTP_USER_AGENT'] . time()));
+
+                    $newcustomer = new Customer;
+                    
+                    $newcustomer->username= $username;
+                    $newcustomer->password=$password;
+                    $newcustomer->token= $token;
+                    $newcustomer->email=$email;
+
+                    $newcustomer->script=$script;
+                    $newcustomer->save();
+                    //Create 2 tables
+                    Schema::create($username, function($table)
+                                {
+                                    $table->increments('id');
+                                    $table->string('username',20);
+                                    $table->string('token',100);
+                                    $table->string('script',100);
+                                    $table->string('counter',1);
+                                    $table->timestamps();
+                                });
+                    // Schema::create($username."_transaction", function($table)
+                    //         {
+                    //             $table->increments('id');
+                    //             $table->string('script',100);
+                    //             $table->string('amount',3);
+                    //             $table->string('purchase_date',10);
+                    //             $table->pa
+
+                    //         });
+                    DB::table($username)->insert(
+                        array('id' =>1, 'username' => $username,'token'=>$token,'script'=>$script,'counter'=>'0')
+                                        );
+                    //Add to users table
+                    $user= new User;
+                    $user->username=$username;
+                    $user->password=Hash::make($password);
+                    $user->save();
+                    DB::table("transactions")->insert(array('username'=>$username,'amount'=>"10",'filename'=>$script,'time'=>time()));
+                    Session::forget('price');
+                    Mailgun::send('emails.mail', array('username'=>$username,'token'=>$token,'password'=>$password), function($message) use ($email){
+                     $message->to($email,"Hey")->subject('Welcome!');});//mail
+
+                });//Transaction Ends
+                    //Send Download Link
+                    
+
+                    $script=DB::table('products')->where('id',Session::get('id'))->pluck('filename'); Session::forget('id');
+                
+                    //return Response::download(storage_path().'/files/'.$script);
+                    return "A download link with instructions has been sent to your mail. Please check your inbox/spam/others folder";
+
+
+        
+            }	
 
     }
     
@@ -135,7 +206,7 @@ public function getPaymentStatus()
     Session::forget('paypal_payment_id');
 
     if (empty(Input::get('PayerID')) || empty(Input::get('token'))) {
-        return Redirect::route('payment.failed')
+        return Redirect::route('failed')
             ->with('error', 'Payment failed');
     }
 
@@ -226,8 +297,12 @@ public function getPaymentStatus()
 
         
     }
-    return Redirect::route('payment.failed')
-        ->with('error', 'Payment failed');
+    return Redirect::route('failed');
 }
 
+
+public function failed()
+{
+    return "Payment Failed. Please try again";
+}
 }

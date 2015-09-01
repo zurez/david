@@ -12,6 +12,10 @@ class AdminController extends \BaseController {
 			    # code...
 			    $this->beforeFilter('admin');
 			  }
+	public function login()
+	{
+		
+	}
 	public function index()
 	{
 		$products= Products::all();

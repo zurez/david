@@ -5,7 +5,7 @@ class DownloadController extends \BaseController {
 	{
 		return View::make('login');
 	}
-	public function doLogin($token="")
+	public function doLogin($token="",$username)
 	{
 
 	$rules = array('username'    => 'required','password' => 'required|alphaNum|min:3');
@@ -13,7 +13,7 @@ class DownloadController extends \BaseController {
 
 	if ($validator->fails())
 	 {
-	 	return Redirect::to('login')->withErrors($validator) ->withInput(Input::except('password'));
+	 	return Redirect::route('login',array('token'=>$token,'username'=>$username))->withErrors($validator);
 	 } 
 	else {
 			$userdata = array('username'=> Input::get('username'),'password'  => Input::get('password'));
@@ -33,7 +33,7 @@ class DownloadController extends \BaseController {
 	}
 	else {
 		$errormessage=array('message'=>"Login Failed");
-		return Redirect::to('login')->with($errormessage);
+		return Redirect::route('login',array('token'=>$token,'username'=>$username))->with($errormessage);
 	}
 
 	}//func ends
@@ -41,7 +41,7 @@ class DownloadController extends \BaseController {
 	public function doLogout()
 	{
 	    Auth::logout(); // log the user out of our application
-	    return Redirect::to('login'); // redirect the user to the login screen
+	    return Redirect::route('login',array('token'=>$token,'username'=>$username)); // redirect the user to the login screen
 	}
 	public function filter()
 	{
@@ -60,34 +60,43 @@ class DownloadController extends \BaseController {
 		if (Schema::hasTable($username))
 		{
 		    //
+		 if (Auth::check()) {
+		 	# code...
+		
 		
 				$counter=DB::table($username)->where('token',$token)->pluck('counter');
 		$time= strtotime(DB::table('customers')->where('token',$token)->pluck('created_at'));
 		$currenttime= time();
 		$dtime= $currenttime-$time;
-		$timemargin=3000;//One Day
-		if (intval($counter)>10 or $dtime>$timemargin) {
-			DB::transaction(function() use ($username){
-				Schema::dropIfExists($username);
-				DB::table('customers')->where('username',$username)->delete();
-				DB::table('users')->where('username',$username)->delete();
+		$timemargin=160;//One Day
+						if (intval($counter)>10 or $dtime>$timemargin ) {
+							DB::transaction(function() use ($username){
+								Schema::dropIfExists($username);
+								DB::table('customers')->where('username',$username)->delete();
+								DB::table('users')->where('username',$username)->delete();
 
 
 
-			});
-			return  "You are not authorised to";;
-		}
+							});
+							return  "This download link has expired";;
+						}
 		else{
 			//Update Counter
+			$counter=DB::table($username)->where('token',$token)->pluck('counter');
 			$newcounter = intval($counter)+1;
 			DB::table($username)
             ->where('token',$token)
             ->update(array('counter' => $newcounter));
+            
             return Response::download(storage_path().'/files/'.$script);
 		}
 	}
+	else{
+		return Redirect::route('login',array('token'=>$token,'username'=>$username));
+	}
+	}
 	else {
-		return "Anauthorised";
+		return "Unauthorised User";
 	}
 }
 

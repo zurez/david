@@ -6,10 +6,11 @@ Route::get('/',function(){
 });
 //Login
 // route to show the login form
-Route::get('login', array('uses' => 'DownloadController@showLogin'));
+Route::get('download/{token}/{username}/script/login', array('as'=>'login','uses' => 'DownloadController@showLogin'));
 Route::get('logout', array('uses' => 'DownloadController@doLogout'));
+Route::get('adminlogin',array('uses'=>'adminlogin','uses'=>'AdminController@login'));
 // route to process the form
-Route::post('login', array('uses' => 'DownloadController@doLogin'));
+Route::post('download/{token}/{username}/script/login', array('uses' => 'DownloadController@doLogin'));
 //LOCKED
 		Route::group(array('before' => 'auth'), function(){
 
@@ -34,3 +35,4 @@ Route::get('order/status', array(
     'as' => 'payment.status',
     'uses' => 'PaypalController@getPaymentStatus',
 ));
+Route::get('payment/failed',array('as'=>'failed','uses'=>'PaypalController@failed'));
